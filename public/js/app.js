@@ -4,25 +4,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     const tokenCounter = new TokenCounter();
     
+    const promptLibrary = new PromptLibrary(ollamaClient);
+    const chatManager = new ChatManager(ollamaClient, openaiClient, tokenCounter, promptLibrary);
+    
     try {
         const models = await ollamaClient.fetchModels();
         console.log('Available Ollama models:', models);
-        
-        const contextLimits = {
-            ...ollamaClient.getAllModelContextLimits(),
-            ...openaiClient.getAllModelContextLimits()
-        };
-        tokenCounter.setModelContextLimits(contextLimits);
-        
-        const promptLibrary = new PromptLibrary(ollamaClient);
-        
-        const chatManager = new ChatManager(ollamaClient, openaiClient, tokenCounter, promptLibrary);
-        
-        Utils.showToast('Anwendung initialisiert', 'success');
+        Utils.showToast('Ollama-Verbindung hergestellt', 'success');
     } catch (error) {
-        console.error('Error initializing app:', error);
-        Utils.showToast('Fehler bei der Initialisierung. Bitte überprüfen Sie die Verbindung.', 'error');
+        console.warn('Ollama not available:', error);
+        Utils.showToast('Ollama nicht verfügbar - nur OpenAI-Modelle verfügbar', 'warning');
     }
+    
+    const contextLimits = {
+        ...ollamaClient.getAllModelContextLimits(),
+        ...openaiClient.getAllModelContextLimits()
+    };
+    tokenCounter.setModelContextLimits(contextLimits);
+    
+    Utils.showToast('Anwendung initialisiert', 'success');
     
     window.addEventListener('click', (event) => {
         document.querySelectorAll('.modal').forEach(modal => {
