@@ -6,31 +6,18 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - OLLAMA_API_URL=http://ollama:11434
+      - OLLAMA_API_URL=${OLLAMA_API_URL:-http://ollama:11434}
       - NODE_ENV=production
     volumes:
       - ./data:/app/data
-    depends_on:
+    networks:
+      - default
+      - core_proxy-manager
       - ollama
-    networks:
-      - ollama-network
     restart: unless-stopped
-
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    networks:
-      - ollama-network
-    restart: unless-stopped
-    environment:
-      - OLLAMA_ORIGINS=*
-
-volumes:
-  ollama-data:
 
 networks:
-  ollama-network:
-    driver: bridge
+  core_proxy-manager:
+    external: true
+  ollama:
+    external: true

@@ -1,24 +1,27 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const ollamaClient = new OllamaClient();
+    const openaiClient = new OpenAIClient();
     
     const tokenCounter = new TokenCounter();
     
     try {
         const models = await ollamaClient.fetchModels();
-        console.log('Available models:', models);
+        console.log('Available Ollama models:', models);
         
-        tokenCounter.setModelContextLimits(ollamaClient.getAllModelContextLimits());
+        const contextLimits = {
+            ...ollamaClient.getAllModelContextLimits(),
+            ...openaiClient.getAllModelContextLimits()
+        };
+        tokenCounter.setModelContextLimits(contextLimits);
         
         const promptLibrary = new PromptLibrary(ollamaClient);
         
-        const chatManager = new ChatManager(ollamaClient, tokenCounter, promptLibrary);
+        const chatManager = new ChatManager(ollamaClient, openaiClient, tokenCounter, promptLibrary);
         
-        window.modelManager = new ModelManager(ollamaClient);
-        
-        Utils.showToast('Verbindung zu Ollama hergestellt', 'success');
+        Utils.showToast('Anwendung initialisiert', 'success');
     } catch (error) {
         console.error('Error initializing app:', error);
-        Utils.showToast('Fehler bei der Verbindung zu Ollama. Bitte stellen Sie sicher, dass der Ollama-Server läuft.', 'error');
+        Utils.showToast('Fehler bei der Initialisierung. Bitte überprüfen Sie die Verbindung.', 'error');
     }
     
     window.addEventListener('click', (event) => {
