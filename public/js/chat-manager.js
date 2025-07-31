@@ -33,8 +33,8 @@ class ChatManager {
         this.setupEventListeners();
         await this.loadSettings();
         
-        this.connectionIndicator = document.getElementById('connectionIndicator');
-        this.connectionText = document.getElementById('connectionText');
+        this.ollamaIndicator = document.getElementById('ollamaIndicator');
+        this.openaiIndicator = document.getElementById('openaiIndicator');
         this.startConnectionMonitoring();
         
         const initialChatCount = Math.max(2, this.maxChatWindows);
@@ -634,29 +634,18 @@ class ChatManager {
     }
     
     async checkConnection() {
-        this.connectionIndicator.className = 'connection-led checking';
-        this.connectionText.textContent = 'Verbindung prüfen...';
+        this.ollamaIndicator.className = 'connection-led checking';
+        this.openaiIndicator.className = 'connection-led checking';
         
         try {
             const ollamaConnected = await this.ollamaClient.checkConnection();
             const openaiConnected = await this.openaiClient.checkConnection();
             
-            if (ollamaConnected && openaiConnected) {
-                this.connectionIndicator.className = 'connection-led connected';
-                this.connectionText.textContent = 'Ollama & OpenAI verbunden';
-            } else if (ollamaConnected) {
-                this.connectionIndicator.className = 'connection-led connected';
-                this.connectionText.textContent = 'Ollama verbunden';
-            } else if (openaiConnected) {
-                this.connectionIndicator.className = 'connection-led connected';
-                this.connectionText.textContent = 'OpenAI verbunden';
-            } else {
-                this.connectionIndicator.className = 'connection-led';
-                this.connectionText.textContent = 'Keine Verbindung';
-            }
+            this.ollamaIndicator.className = ollamaConnected ? 'connection-led connected' : 'connection-led';
+            this.openaiIndicator.className = openaiConnected ? 'connection-led connected' : 'connection-led';
         } catch (error) {
-            this.connectionIndicator.className = 'connection-led';
-            this.connectionText.textContent = 'Verbindungsfehler';
+            this.ollamaIndicator.className = 'connection-led';
+            this.openaiIndicator.className = 'connection-led';
         }
     }
     

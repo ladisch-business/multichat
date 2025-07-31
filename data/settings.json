@@ -2,5 +2,5 @@
   "tokenWarningThreshold": 90,
   "maxChatWindows": 6,
   "theme": "dark",
-  "openaiApiKey": ""
+  "openaiApiKey": "sk-test123456789"
 }

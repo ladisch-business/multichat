@@ -16,8 +16,14 @@
                 <h1><i class="fas fa-comments"></i> Ollama Power-Interface</h1>
                 <div class="header-controls">
                     <div class="connection-status">
-                        <div id="connectionIndicator" class="connection-led"></div>
-                        <span id="connectionText">Verbindung prüfen...</span>
+                        <div class="connection-group">
+                            <div id="ollamaIndicator" class="connection-led"></div>
+                            <span class="connection-label">Ollama</span>
+                        </div>
+                        <div class="connection-group">
+                            <div id="openaiIndicator" class="connection-led"></div>
+                            <span class="connection-label">OpenAI</span>
+                        </div>
                     </div>
                     <button id="settingsBtn" class="btn btn-secondary">
                         <i class="fas fa-cog"></i> Einstellungen
