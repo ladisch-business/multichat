@@ -117,7 +117,7 @@ body {
 
 .chat-grid[data-chat-count="5"] {
     grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 0.67fr 0.67fr 0.67fr 4fr;
+    grid-template-rows: 0.5fr 0.5fr 0.5fr 3fr;
     grid-template-areas: 
         "chat1 chat2 chat3"
         "chat1 chat2 chat4"
