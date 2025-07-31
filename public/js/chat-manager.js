@@ -29,9 +29,15 @@ class ChatManager {
         this.setupEventListeners();
         await this.loadSettings();
         
+        this.connectionIndicator = document.getElementById('connectionIndicator');
+        this.connectionText = document.getElementById('connectionText');
+        this.startConnectionMonitoring();
+        
         for (let i = 0; i < this.maxChatWindows; i++) {
             this.createChatWindow();
         }
+        
+        this.updateChatLayout();
     }
     
     setupEventListeners() {
@@ -119,6 +125,8 @@ class ChatManager {
             
             this.maxChatWindows = maxChatWindows;
             
+            this.updateChatLayout();
+            
             Utils.showToast('Einstellungen gespeichert', 'success');
             this.settingsModal.classList.remove('show');
         } catch (error) {
@@ -192,6 +200,8 @@ class ChatManager {
         this.updateModelSelector(chatId);
         
         this.updatePromptSelector(chatId);
+        
+        this.updateChatLayout();
         
         return chatId;
     }
@@ -566,5 +576,34 @@ class ChatManager {
             console.error('Error summarizing conversation:', error);
             Utils.showToast('Fehler beim Zusammenfassen der Konversation', 'error');
         }
+    }
+    
+    startConnectionMonitoring() {
+        this.checkConnection();
+        setInterval(() => this.checkConnection(), 10000);
+    }
+    
+    async checkConnection() {
+        this.connectionIndicator.className = 'connection-led checking';
+        this.connectionText.textContent = 'Verbindung prüfen...';
+        
+        try {
+            const isConnected = await this.ollamaClient.checkConnection();
+            if (isConnected) {
+                this.connectionIndicator.className = 'connection-led connected';
+                this.connectionText.textContent = 'Ollama verbunden';
+            } else {
+                this.connectionIndicator.className = 'connection-led';
+                this.connectionText.textContent = 'Ollama getrennt';
+            }
+        } catch (error) {
+            this.connectionIndicator.className = 'connection-led';
+            this.connectionText.textContent = 'Verbindungsfehler';
+        }
+    }
+    
+    updateChatLayout() {
+        const chatCount = this.chats.length;
+        this.chatGrid.setAttribute('data-chat-count', chatCount.toString());
     }
 }

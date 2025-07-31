@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const chatManager = new ChatManager(ollamaClient, tokenCounter, promptLibrary);
         
+        window.modelManager = new ModelManager(ollamaClient);
+        
         Utils.showToast('Verbindung zu Ollama hergestellt', 'success');
     } catch (error) {
         console.error('Error initializing app:', error);
