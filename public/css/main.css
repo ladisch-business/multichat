@@ -51,7 +51,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1400px;
+    max-width: 95vw;
     margin: 0 auto;
 }
 
@@ -74,29 +74,44 @@ body {
 .main-content {
     flex: 1;
     padding: 1.5rem;
-    max-width: 1400px;
+    max-width: 95vw;
     margin: 0 auto;
     width: 100%;
 }
 
 .chat-grid {
     display: grid;
-    gap: 1.5rem;
+    gap: 0.25rem;
     min-height: calc(100vh - 120px);
     width: 100%;
+    overflow: hidden;
+}
+
+.chat-grid[data-chat-count="1"] {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    height: calc(100vh - 130px);
+}
+
+.chat-grid[data-chat-count="2"] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    height: calc(100vh - 130px);
 }
 
 .chat-grid[data-chat-count="3"] {
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr;
+    height: calc(100vh - 130px);
 }
 
 .chat-grid[data-chat-count="4"] {
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     grid-template-areas: 
         "chat1 chat2 chat3"
-        "chat1 chat4 chat3";
+        "chat1 chat2 chat4";
+    height: calc(100vh - 130px);
 }
 
 .chat-grid[data-chat-count="4"] .chat-window:nth-child(1) { grid-area: chat1; }
@@ -105,12 +120,14 @@ body {
 .chat-grid[data-chat-count="4"] .chat-window:nth-child(4) { grid-area: chat4; }
 
 .chat-grid[data-chat-count="5"] {
-    grid-template-columns: 1fr 1fr 2fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
     grid-template-areas: 
         "chat1 chat2 chat3"
         "chat1 chat2 chat4"
         "chat1 chat2 chat5";
+    height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
 }
 
 .chat-grid[data-chat-count="5"] .chat-window:nth-child(1) { grid-area: chat1; }
@@ -119,26 +136,12 @@ body {
 .chat-grid[data-chat-count="5"] .chat-window:nth-child(4) { grid-area: chat4; }
 .chat-grid[data-chat-count="5"] .chat-window:nth-child(5) { grid-area: chat5; }
 
-.chat-grid[data-chat-count="6"] {
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-}
 
 .chat-grid:not([data-chat-count]) {
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
 }
 
-@media (max-width: 1200px) {
-    .chat-grid[data-chat-count] {
-        grid-template-columns: 1fr !important;
-        grid-template-rows: auto !important;
-        grid-template-areas: none !important;
-    }
-    
-    .chat-grid[data-chat-count] .chat-window {
-        grid-area: auto !important;
-    }
-}
+/* Responsive breakpoint removed for 2K/4K/1080p support */
 
 .btn {
     display: inline-flex;
