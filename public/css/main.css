@@ -86,6 +86,10 @@ body {
     width: 100%;
 }
 
+.chat-grid[data-chat-count="2"] {
+    grid-template-columns: 1fr 1fr;
+}
+
 .chat-grid[data-chat-count="3"] {
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr;
