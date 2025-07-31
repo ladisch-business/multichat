@@ -327,6 +327,10 @@ class ChatManager {
             const defaultModel = `ollama:${this.ollamaClient.models[0].name}`;
             modelSelector.value = defaultModel;
             this.setModel(chatId, defaultModel);
+        } else if (openaiModels.length > 0) {
+            const defaultModel = `openai:${openaiModels[0].name}`;
+            modelSelector.value = defaultModel;
+            this.setModel(chatId, defaultModel);
         }
         
         this.updateTokenDisplay(chatId);
@@ -634,13 +638,21 @@ class ChatManager {
         this.connectionText.textContent = 'Verbindung prüfen...';
         
         try {
-            const isConnected = await this.ollamaClient.checkConnection();
-            if (isConnected) {
+            const ollamaConnected = await this.ollamaClient.checkConnection();
+            const openaiConnected = await this.openaiClient.checkConnection();
+            
+            if (ollamaConnected && openaiConnected) {
                 this.connectionIndicator.className = 'connection-led connected';
-                this.connectionText.textContent = 'Verbunden';
+                this.connectionText.textContent = 'Ollama & OpenAI verbunden';
+            } else if (ollamaConnected) {
+                this.connectionIndicator.className = 'connection-led connected';
+                this.connectionText.textContent = 'Ollama verbunden';
+            } else if (openaiConnected) {
+                this.connectionIndicator.className = 'connection-led connected';
+                this.connectionText.textContent = 'OpenAI verbunden';
             } else {
                 this.connectionIndicator.className = 'connection-led';
-                this.connectionText.textContent = 'Getrennt';
+                this.connectionText.textContent = 'Keine Verbindung';
             }
         } catch (error) {
             this.connectionIndicator.className = 'connection-led';
