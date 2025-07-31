@@ -6,7 +6,7 @@ class ChatManager {
         this.promptLibrary = promptLibrary;
         
         this.chats = [];
-        this.maxChatWindows = 6;
+        this.maxChatWindows = 5;
         this.chatGrid = document.getElementById('chatGrid');
         
         this.settingsBtn = document.getElementById('settingsBtn');
@@ -94,7 +94,7 @@ class ChatManager {
             this.maxChatWindows = settings.maxChatWindows || 5;
             
             this.tokenThreshold.value = settings.tokenWarningThreshold || 90;
-            this.maxChatWindowsInput.value = settings.maxChatWindows || 6;
+            this.maxChatWindowsInput.value = settings.maxChatWindows || 5;
             this.openaiApiKeyInput.value = settings.openaiApiKey || '';
 
             if (settings.openaiApiKey) {
@@ -118,8 +118,8 @@ class ChatManager {
             return;
         }
         
-        if (isNaN(maxChatWindows) || maxChatWindows < 2 || maxChatWindows > 6) {
-            Utils.showToast('Maximale Chat-Fenster muss zwischen 2 und 6 liegen', 'warning');
+        if (isNaN(maxChatWindows) || maxChatWindows < 1 || maxChatWindows > 5) {
+            Utils.showToast('Maximale Chat-Fenster muss zwischen 1 und 5 liegen', 'warning');
             return;
         }
         
