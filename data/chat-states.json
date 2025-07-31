@@ -1,5 +1,5 @@
 {
-  "chatCount": 4,
+  "chatCount": 5,
   "chats": [
     {
       "model": "openai:gpt-4",
@@ -8,6 +8,10 @@
     {
       "model": "openai:gpt-4o",
       "systemPromptId": "d88ab25f-e337-4922-be80-acb7be6d03da"
+    },
+    {
+      "model": "openai:gpt-3.5-turbo",
+      "systemPromptId": null
     },
     {
       "model": "openai:gpt-3.5-turbo",
