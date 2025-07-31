@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Power-Interface</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/chat.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <header class="app-header">
+            <div class="header-content">
+                <h1><i class="fas fa-comments"></i> Ollama Power-Interface</h1>
+                <div class="header-controls">
+                    <button id="settingsBtn" class="btn btn-secondary">
+                        <i class="fas fa-cog"></i> Einstellungen
+                    </button>
+                    <button id="promptLibraryBtn" class="btn btn-secondary">
+                        <i class="fas fa-book"></i> Prompt-Bibliothek
+                    </button>
+                    <button id="refreshModelsBtn" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Modelle aktualisieren
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div id="chatGrid" class="chat-grid">
+            </div>
+        </main>
+
+        <div id="settingsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Einstellungen</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="tokenThreshold">Token-Warnschwelle (%)</label>
+                        <input type="number" id="tokenThreshold" min="50" max="95" value="90">
+                    </div>
+                    <div class="form-group">
+                        <label for="maxChatWindows">Maximale Chat-Fenster</label>
+                        <input type="number" id="maxChatWindows" min="3" max="10" value="5">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveSettings" class="btn btn-primary">Speichern</button>
+                    <button class="btn btn-secondary modal-close">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="promptLibraryModal" class="modal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h2>System-Prompt-Bibliothek</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="prompt-library-controls">
+                        <button id="addPromptBtn" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Neuer Prompt
+                        </button>
+                    </div>
+                    <div id="promptList" class="prompt-list">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="promptEditorModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="promptEditorTitle">Prompt bearbeiten</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="promptName">Name</label>
+                        <input type="text" id="promptName" placeholder="Prompt-Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="promptCategory">Kategorie</label>
+                        <input type="text" id="promptCategory" placeholder="z.B. Entwicklung, Kreativ, Allgemein">
+                    </div>
+                    <div class="form-group">
+                        <label for="promptContent">System-Prompt</label>
+                        <textarea id="promptContent" rows="6" placeholder="Beschreiben Sie hier das gewünschte Verhalten des LLM..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="savePrompt" class="btn btn-primary">Speichern</button>
+                    <button class="btn btn-secondary modal-close">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tokenWarningModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Token-Limit erreicht</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Das Kontextfenster für diesen Chat ist fast voll. Möchten Sie die Konversation zusammenfassen und in einem neuen Chat fortsetzen?</p>
+                    <div class="warning-info">
+                        <p><strong>Aktuelle Token:</strong> <span id="currentTokens"></span></p>
+                        <p><strong>Limit:</strong> <span id="tokenLimit"></span></p>
+                        <p><strong>Auslastung:</strong> <span id="tokenPercentage"></span>%</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="summarizeConversation" class="btn btn-primary">
+                        <i class="fas fa-compress-alt"></i> Zusammenfassen & Fortsetzen
+                    </button>
+                    <button class="btn btn-secondary modal-close">Weiter ohne Zusammenfassung</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/token-counter.js"></script>
+    <script src="js/ollama-client.js"></script>
+    <script src="js/prompt-library.js"></script>
+    <script src="js/chat-manager.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
