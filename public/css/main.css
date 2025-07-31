@@ -103,10 +103,11 @@ body {
 
 .chat-grid[data-chat-count="4"] {
     grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: 0.5fr 0.5fr 2fr;
     grid-template-areas: 
         "chat1 chat2 chat3"
-        "chat1 chat2 chat4";
+        "chat1 chat2 chat4"
+        "chat1 chat2 .";
 }
 
 .chat-grid[data-chat-count="4"] .chat-window:nth-child(1) { grid-area: chat1; }
@@ -116,11 +117,12 @@ body {
 
 .chat-grid[data-chat-count="5"] {
     grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-rows: 0.33fr 0.33fr 0.33fr 2fr;
     grid-template-areas: 
         "chat1 chat2 chat3"
         "chat1 chat2 chat4"
-        "chat1 chat2 chat5";
+        "chat1 chat2 chat5"
+        "chat1 chat2 .";
 }
 
 .chat-grid[data-chat-count="5"] .chat-window:nth-child(1) { grid-area: chat1; }
