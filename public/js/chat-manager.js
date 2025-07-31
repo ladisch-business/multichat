@@ -109,7 +109,7 @@ class ChatManager {
             this.chats = [];
             this.chatGrid.innerHTML = '';
             
-            const chatCount = chatStates.chatCount || Math.max(2, this.maxChatWindows);
+            const chatCount = Math.max(chatStates.chatCount || 2, this.maxChatWindows);
             
             for (let i = 0; i < chatCount; i++) {
                 const savedChat = chatStates.chats && chatStates.chats[i];
