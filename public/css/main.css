@@ -288,9 +288,20 @@ body {
 .connection-status {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1rem;
     margin-right: 1rem;
     font-size: 0.875rem;
+}
+
+.connection-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.connection-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
 
 .connection-led {
