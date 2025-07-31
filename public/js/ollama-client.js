@@ -204,6 +204,26 @@ class OllamaClient {
         }
     }
 
+    async getChatStates() {
+        const response = await fetch(`${this.apiBaseUrl}/chat-states`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch chat states');
+        }
+        return response.json();
+    }
+
+    async updateChatStates(chatStates) {
+        const response = await fetch(`${this.apiBaseUrl}/chat-states`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(chatStates)
+        });
+        if (!response.ok) {
+            throw new Error('Failed to update chat states');
+        }
+        return response.json();
+    }
+
     async pullModel(modelName) {
         try {
             const response = await fetch(`${this.apiBaseUrl}/models/pull`, {

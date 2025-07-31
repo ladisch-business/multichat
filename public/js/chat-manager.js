@@ -37,10 +37,7 @@ class ChatManager {
         this.openaiIndicator = document.getElementById('openaiIndicator');
         this.startConnectionMonitoring();
         
-        const initialChatCount = Math.max(2, this.maxChatWindows);
-        for (let i = 0; i < initialChatCount; i++) {
-            this.createChatWindow();
-        }
+        await this.loadChatStates();
         
         this.updateChatLayout();
     }
@@ -104,6 +101,68 @@ class ChatManager {
             console.error('Error loading settings:', error);
         }
     }
+
+    async loadChatStates() {
+        try {
+            const chatStates = await this.ollamaClient.getChatStates();
+            
+            this.chats = [];
+            this.chatGrid.innerHTML = '';
+            
+            const chatCount = chatStates.chatCount || Math.max(2, this.maxChatWindows);
+            
+            for (let i = 0; i < chatCount; i++) {
+                const savedChat = chatStates.chats && chatStates.chats[i];
+                const chatId = this.createChatWindow();
+                
+                if (savedChat) {
+                    const chat = this.getChat(chatId);
+                    if (chat) {
+                        chat.model = savedChat.model || '';
+                        
+                        if (savedChat.systemPromptId) {
+                            const prompt = this.promptLibrary.prompts.find(p => p.id === savedChat.systemPromptId);
+                            chat.systemPrompt = prompt ? prompt.prompt : null;
+                        } else {
+                            chat.systemPrompt = null;
+                        }
+                        
+                        await this.updateModelSelector(chatId);
+                        this.updatePromptSelector(chatId);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading chat states:', error);
+            const initialChatCount = Math.max(2, this.maxChatWindows);
+            for (let i = 0; i < initialChatCount; i++) {
+                this.createChatWindow();
+            }
+        }
+    }
+
+    async saveChatStates() {
+        try {
+            const chatStates = {
+                chatCount: this.chats.length,
+                chats: this.chats.map(chat => {
+                    let systemPromptId = null;
+                    if (chat.systemPrompt) {
+                        const prompt = this.promptLibrary.prompts.find(p => p.prompt === chat.systemPrompt);
+                        systemPromptId = prompt ? prompt.id : null;
+                    }
+                    return {
+                        model: chat.model || '',
+                        systemPromptId: systemPromptId
+                    };
+                })
+            };
+            
+            await this.ollamaClient.updateChatStates(chatStates);
+        } catch (error) {
+            console.error('Error saving chat states:', error);
+        }
+    }
     
     openSettingsModal() {
         this.settingsModal.classList.add('show');
@@ -153,6 +212,7 @@ class ChatManager {
             this.maxChatWindows = maxChatWindows;
             
             this.updateChatLayout();
+            this.saveChatStates();
             
             Utils.showToast('Einstellungen gespeichert', 'success');
             this.settingsModal.classList.remove('show');
@@ -354,7 +414,13 @@ class ChatManager {
             promptSelector.appendChild(option);
         }
         
-        if (currentPromptId && prompts.some(p => p.id === currentPromptId)) {
+        // Set the correct prompt based on chat's systemPrompt
+        if (chat && chat.systemPrompt) {
+            const prompt = prompts.find(p => p.prompt === chat.systemPrompt);
+            if (prompt) {
+                promptSelector.value = prompt.id;
+            }
+        } else if (currentPromptId && prompts.some(p => p.id === currentPromptId)) {
             promptSelector.value = currentPromptId;
         }
     }
@@ -368,6 +434,7 @@ class ChatManager {
         if (chat) {
             chat.model = model;
             this.updateTokenDisplay(chatId);
+            this.saveChatStates();
         }
     }
     
@@ -376,6 +443,7 @@ class ChatManager {
         if (chat) {
             chat.systemPrompt = systemPrompt;
             this.updateTokenDisplay(chatId);
+            this.saveChatStates();
         }
     }
     
