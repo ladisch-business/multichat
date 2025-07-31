@@ -86,6 +86,12 @@ body {
     width: 100%;
 }
 
+.chat-grid[data-chat-count="1"] {
+    grid-template-columns: 1fr;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
 .chat-grid[data-chat-count="2"] {
     grid-template-columns: 1fr 1fr;
 }
@@ -96,11 +102,11 @@ body {
 }
 
 .chat-grid[data-chat-count="4"] {
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     grid-template-areas: 
         "chat1 chat2 chat3"
-        "chat1 chat4 chat3";
+        "chat1 chat2 chat4";
 }
 
 .chat-grid[data-chat-count="4"] .chat-window:nth-child(1) { grid-area: chat1; }
@@ -109,7 +115,7 @@ body {
 .chat-grid[data-chat-count="4"] .chat-window:nth-child(4) { grid-area: chat4; }
 
 .chat-grid[data-chat-count="5"] {
-    grid-template-columns: 1fr 1fr 2fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
     grid-template-areas: 
         "chat1 chat2 chat3"
