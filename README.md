@@ -115,6 +115,269 @@ multichat/
     └── settings.json         # Benutzereinstellungen
 ```
 
+## Server-Deployment (Produktion)
+
+### Voraussetzungen für Server-Deployment
+
+- Linux-Server (Ubuntu 20.04+ empfohlen)
+- Docker und Docker Compose installiert
+- nginx installiert
+- Portainer (optional, für Container-Management)
+- Domain oder Subdomain für die Anwendung
+
+### 1. Server-Vorbereitung
+
+```bash
+# Docker und Docker Compose installieren (falls nicht vorhanden)
+sudo apt update
+sudo apt install docker.io docker-compose nginx
+
+# Benutzer zur Docker-Gruppe hinzufügen
+sudo usermod -aG docker $USER
+
+# nginx starten und aktivieren
+sudo systemctl start nginx
+sudo systemctl enable nginx
+```
+
+### 2. Anwendung auf Server bereitstellen
+
+```bash
+# Repository auf Server klonen
+git clone https://github.com/ladisch-business/multichat.git
+cd multichat
+
+# Produktions-Docker-Compose-Datei erstellen
+cp docker-compose.yml docker-compose.prod.yml
+```
+
+### 3. Produktions-Konfiguration
+
+Erstellen Sie eine `docker-compose.prod.yml` für die Produktionsumgebung:
+
+```yaml
+version: '3.8'
+
+services:
+  ollama-power-interface:
+    build: .
+    container_name: multichat-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"  # Nur lokal erreichbar
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - ollama
+    networks:
+      - multichat-network
+    environment:
+      - NODE_ENV=production
+      - OLLAMA_API_URL=http://ollama:11434
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: multichat-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - multichat-network
+    # GPU-Unterstützung (optional)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  ollama_data:
+
+networks:
+  multichat-network:
+    driver: bridge
+```
+
+### 4. nginx Reverse Proxy Konfiguration
+
+Erstellen Sie eine nginx-Konfiguration für Ihre Domain:
+
+```bash
+sudo nano /etc/nginx/sites-available/multichat
+```
+
+```nginx
+server {
+    listen 80;
+    server_name ihre-domain.de;  # Ersetzen Sie durch Ihre Domain
+    
+    # Weiterleitung zu HTTPS (nach SSL-Setup)
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name ihre-domain.de;  # Ersetzen Sie durch Ihre Domain
+    
+    # SSL-Zertifikate (Let's Encrypt empfohlen)
+    ssl_certificate /etc/letsencrypt/live/ihre-domain.de/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ihre-domain.de/privkey.pem;
+    
+    # SSL-Sicherheitseinstellungen
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    
+    # Sicherheits-Header
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+    
+    # Gzip-Kompression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+    
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # Timeouts für lange LLM-Antworten
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 300s;
+    }
+    
+    # Statische Dateien cachen
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+        proxy_pass http://127.0.0.1:3000;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+Site aktivieren:
+```bash
+sudo ln -s /etc/nginx/sites-available/multichat /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 5. SSL-Zertifikat mit Let's Encrypt
+
+```bash
+# Certbot installieren
+sudo apt install certbot python3-certbot-nginx
+
+# SSL-Zertifikat erstellen
+sudo certbot --nginx -d ihre-domain.de
+
+# Automatische Erneuerung testen
+sudo certbot renew --dry-run
+```
+
+### 6. Portainer für Container-Management
+
+```bash
+# Portainer installieren
+docker volume create portainer_data
+
+docker run -d -p 8000:8000 -p 9443:9443 \
+    --name portainer --restart=always \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v portainer_data:/data \
+    portainer/portainer-ce:latest
+```
+
+Portainer ist dann unter `https://ihre-domain.de:9443` erreichbar.
+
+### 7. Anwendung starten
+
+```bash
+# Produktionsumgebung starten
+docker-compose -f docker-compose.prod.yml up -d
+
+# Status prüfen
+docker-compose -f docker-compose.prod.yml ps
+
+# Logs anzeigen
+docker-compose -f docker-compose.prod.yml logs -f
+```
+
+### 8. Systemd-Service (optional)
+
+Für automatischen Start beim Systemstart:
+
+```bash
+sudo nano /etc/systemd/system/multichat.service
+```
+
+```ini
+[Unit]
+Description=Multichat Ollama Power Interface
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/path/to/multichat
+ExecStart=/usr/bin/docker-compose -f docker-compose.prod.yml up -d
+ExecStop=/usr/bin/docker-compose -f docker-compose.prod.yml down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable multichat.service
+sudo systemctl start multichat.service
+```
+
+### 9. Monitoring und Wartung
+
+```bash
+# Container-Status überwachen
+docker-compose -f docker-compose.prod.yml ps
+
+# Logs überwachen
+docker-compose -f docker-compose.prod.yml logs -f --tail=100
+
+# Updates durchführen
+git pull
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose.prod.yml up -d
+
+# Backup der Daten
+tar -czf multichat-backup-$(date +%Y%m%d).tar.gz data/
+```
+
+### 10. Firewall-Konfiguration
+
+```bash
+# UFW Firewall konfigurieren
+sudo ufw allow ssh
+sudo ufw allow 'Nginx Full'
+sudo ufw allow 9443  # Portainer (optional)
+sudo ufw enable
+```
+
 ## Fehlerbehebung
 
 ### Ollama-Verbindung
@@ -130,6 +393,35 @@ Bei langsamer Performance:
 - Reduzieren Sie die Anzahl der Chat-Fenster in den Einstellungen
 - Verwenden Sie kleinere Modelle für bessere Antwortzeiten
 - Nutzen Sie die Zusammenfassungsfunktion bei langen Konversationen
+
+### Server-spezifische Probleme
+
+**nginx-Fehler:**
+```bash
+# nginx-Konfiguration testen
+sudo nginx -t
+
+# nginx-Logs prüfen
+sudo tail -f /var/log/nginx/error.log
+```
+
+**SSL-Probleme:**
+```bash
+# Zertifikat-Status prüfen
+sudo certbot certificates
+
+# Zertifikat erneuern
+sudo certbot renew
+```
+
+**Docker-Container-Probleme:**
+```bash
+# Container neu starten
+docker-compose -f docker-compose.prod.yml restart
+
+# Container-Logs prüfen
+docker-compose -f docker-compose.prod.yml logs ollama-power-interface
+```
 
 ## Abnahmekriterien
 

@@ -203,4 +203,52 @@ class OllamaClient {
             throw error;
         }
     }
+
+    async pullModel(modelName) {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/models/pull`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model: modelName })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to pull model: ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error pulling model:', error);
+            throw error;
+        }
+    }
+
+    async deleteModel(modelName) {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/models/${modelName}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to delete model: ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error deleting model:', error);
+            throw error;
+        }
+    }
+
+    async checkConnection() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/connection/status`);
+            const data = await response.json();
+            return data.connected;
+        } catch (error) {
+            return false;
+        }
+    }
 }

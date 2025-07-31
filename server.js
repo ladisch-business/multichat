@@ -239,6 +239,42 @@ app.put('/api/settings', async (req, res) => {
   }
 });
 
+app.post('/api/models/pull', async (req, res) => {
+  const { model } = req.body;
+  try {
+    const response = await axios.post(`${OLLAMA_API_URL}/api/pull`, {
+      name: model,
+      stream: false
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error pulling model:', error.message);
+    res.status(500).json({ error: 'Failed to pull model from Ollama' });
+  }
+});
+
+app.delete('/api/models/:modelName', async (req, res) => {
+  const { modelName } = req.params;
+  try {
+    await axios.delete(`${OLLAMA_API_URL}/api/delete`, {
+      data: { name: modelName }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting model:', error.message);
+    res.status(500).json({ error: 'Failed to delete model from Ollama' });
+  }
+});
+
+app.get('/api/connection/status', async (req, res) => {
+  try {
+    await axios.get(`${OLLAMA_API_URL}/api/tags`, { timeout: 5000 });
+    res.json({ connected: true });
+  } catch (error) {
+    res.json({ connected: false });
+  }
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
