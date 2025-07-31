@@ -77,6 +77,24 @@ async function saveSettings(settings) {
   await fs.writeFile(path.join(DATA_DIR, 'settings.json'), JSON.stringify(settings, null, 2));
 }
 
+async function loadChatStates() {
+  try {
+    const data = await fs.readFile(path.join(DATA_DIR, 'chat-states.json'), 'utf8');
+    return JSON.parse(data);
+  } catch {
+    const defaultChatStates = {
+      chatCount: 2,
+      chats: []
+    };
+    await saveChatStates(defaultChatStates);
+    return defaultChatStates;
+  }
+}
+
+async function saveChatStates(chatStates) {
+  await fs.writeFile(path.join(DATA_DIR, 'chat-states.json'), JSON.stringify(chatStates, null, 2));
+}
+
 app.get('/api/models', async (req, res) => {
   try {
     const tagsResponse = await axios.get(`${OLLAMA_API_URL}/api/tags`);
@@ -237,6 +255,24 @@ app.put('/api/settings', async (req, res) => {
     res.json(updatedSettings);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+app.get('/api/chat-states', async (req, res) => {
+  try {
+    const chatStates = await loadChatStates();
+    res.json(chatStates);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load chat states' });
+  }
+});
+
+app.put('/api/chat-states', async (req, res) => {
+  try {
+    await saveChatStates(req.body);
+    res.json(req.body);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save chat states' });
   }
 });
 
