@@ -1,11 +1,12 @@
 class ChatManager {
-    constructor(ollamaClient, tokenCounter, promptLibrary) {
+    constructor(ollamaClient, openaiClient, tokenCounter, promptLibrary) {
         this.ollamaClient = ollamaClient;
+        this.openaiClient = openaiClient;
         this.tokenCounter = tokenCounter;
         this.promptLibrary = promptLibrary;
         
         this.chats = [];
-        this.maxChatWindows = 5;
+        this.maxChatWindows = 6;
         this.chatGrid = document.getElementById('chatGrid');
         
         this.settingsBtn = document.getElementById('settingsBtn');
@@ -13,6 +14,9 @@ class ChatManager {
         this.tokenThreshold = document.getElementById('tokenThreshold');
         this.maxChatWindowsInput = document.getElementById('maxChatWindows');
         this.saveSettingsBtn = document.getElementById('saveSettings');
+        this.openaiApiKeyInput = document.getElementById('openaiApiKey');
+        this.modelNameInput = document.getElementById('modelNameInput');
+        this.pullModelBtn = document.getElementById('pullModelBtn');
         
         this.tokenWarningModal = document.getElementById('tokenWarningModal');
         this.currentTokensEl = document.getElementById('currentTokens');
@@ -33,7 +37,8 @@ class ChatManager {
         this.connectionText = document.getElementById('connectionText');
         this.startConnectionMonitoring();
         
-        for (let i = 0; i < this.maxChatWindows; i++) {
+        const initialChatCount = Math.max(2, this.maxChatWindows);
+        for (let i = 0; i < initialChatCount; i++) {
             this.createChatWindow();
         }
         
@@ -47,6 +52,16 @@ class ChatManager {
         
         this.saveSettingsBtn.addEventListener('click', () => {
             this.saveSettings();
+        });
+
+        this.pullModelBtn.addEventListener('click', () => {
+            this.pullModel();
+        });
+
+        this.modelNameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.pullModel();
+            }
         });
         
         document.querySelectorAll('.modal-close').forEach(closeBtn => {
@@ -64,7 +79,7 @@ class ChatManager {
         document.getElementById('refreshModelsBtn').addEventListener('click', async () => {
             try {
                 await this.ollamaClient.fetchModels();
-                this.updateModelSelectors();
+                await this.updateModelSelectors();
                 Utils.showToast('Modelle aktualisiert', 'success');
             } catch (error) {
                 Utils.showToast('Fehler beim Aktualisieren der Modelle', 'error');
@@ -79,7 +94,12 @@ class ChatManager {
             this.maxChatWindows = settings.maxChatWindows || 5;
             
             this.tokenThreshold.value = settings.tokenWarningThreshold || 90;
-            this.maxChatWindowsInput.value = settings.maxChatWindows || 5;
+            this.maxChatWindowsInput.value = settings.maxChatWindows || 6;
+            this.openaiApiKeyInput.value = settings.openaiApiKey || '';
+
+            if (settings.openaiApiKey) {
+                this.openaiClient.setApiKey(settings.openaiApiKey);
+            }
         } catch (error) {
             console.error('Error loading settings:', error);
         }
@@ -98,16 +118,23 @@ class ChatManager {
             return;
         }
         
-        if (isNaN(maxChatWindows) || maxChatWindows < 3 || maxChatWindows > 10) {
-            Utils.showToast('Maximale Chat-Fenster muss zwischen 3 und 10 liegen', 'warning');
+        if (isNaN(maxChatWindows) || maxChatWindows < 2 || maxChatWindows > 6) {
+            Utils.showToast('Maximale Chat-Fenster muss zwischen 2 und 6 liegen', 'warning');
             return;
         }
         
+        const openaiApiKey = this.openaiApiKeyInput.value.trim();
+
         try {
             await this.ollamaClient.updateSettings({
                 tokenWarningThreshold,
-                maxChatWindows
+                maxChatWindows,
+                openaiApiKey
             });
+
+            if (openaiApiKey) {
+                this.openaiClient.setApiKey(openaiApiKey);
+            }
             
             this.tokenCounter.setWarningThreshold(tokenWarningThreshold);
             
@@ -261,13 +288,13 @@ class ChatManager {
         });
     }
     
-    updateModelSelectors() {
+    async updateModelSelectors() {
         for (const chat of this.chats) {
-            this.updateModelSelector(chat.id);
+            await this.updateModelSelector(chat.id);
         }
     }
     
-    updateModelSelector(chatId) {
+    async updateModelSelector(chatId) {
         const modelSelector = document.getElementById(`model-${chatId}`);
         const chat = this.getChat(chatId);
         
@@ -279,18 +306,27 @@ class ChatManager {
         
         for (const model of this.ollamaClient.models) {
             const option = document.createElement('option');
-            option.value = model.name;
-            option.textContent = `${model.name} (${Math.round(model.context_length / 1024)}k)`;
+            option.value = `ollama:${model.name}`;
+            option.textContent = `Ollama: ${model.name} (${Math.round(model.context_length / 1024)}k)`;
+            modelSelector.appendChild(option);
+        }
+
+        const openaiModels = await this.openaiClient.fetchModels();
+        for (const model of openaiModels) {
+            const option = document.createElement('option');
+            option.value = `openai:${model.name}`;
+            option.textContent = `OpenAI: ${model.name} (${Math.round(model.context_length / 1024)}k)`;
             modelSelector.appendChild(option);
         }
         
-        if (currentModel && this.ollamaClient.models.some(m => m.name === currentModel)) {
+        if (currentModel) {
             modelSelector.value = currentModel;
-        } else if (chat.model && this.ollamaClient.models.some(m => m.name === chat.model)) {
+        } else if (chat.model) {
             modelSelector.value = chat.model;
         } else if (this.ollamaClient.models.length > 0) {
-            modelSelector.value = this.ollamaClient.models[0].name;
-            this.setModel(chatId, this.ollamaClient.models[0].name);
+            const defaultModel = `ollama:${this.ollamaClient.models[0].name}`;
+            modelSelector.value = defaultModel;
+            this.setModel(chatId, defaultModel);
         }
         
         this.updateTokenDisplay(chatId);
@@ -356,9 +392,12 @@ class ChatManager {
                 content: chat.systemPrompt
             });
         }
-        
-        const tokenCount = this.tokenCounter.estimateConversationTokens(messages, chat.model);
-        const contextLimit = this.tokenCounter.getContextLimit(chat.model);
+
+        const [provider, modelName] = chat.model.split(':');
+        const tokenCount = this.tokenCounter.estimateConversationTokens(messages, modelName);
+        const contextLimit = provider === 'openai' 
+            ? this.openaiClient.getModelContextLimit(modelName)
+            : this.tokenCounter.getContextLimit(modelName);
         const percentage = Math.min(100, Math.round((tokenCount / contextLimit) * 100));
         
         tokenCountEl.textContent = tokenCount.toLocaleString();
@@ -397,10 +436,13 @@ class ChatManager {
         this.showTypingIndicator(chatId);
         
         try {
-            const response = await this.ollamaClient.sendMessage(
+            const [provider, modelName] = chat.model.split(':');
+            const client = provider === 'openai' ? this.openaiClient : this.ollamaClient;
+            
+            const response = await client.sendMessage(
                 chatId,
                 chat.messages,
-                chat.model,
+                modelName,
                 chat.systemPrompt
             );
             
@@ -475,7 +517,7 @@ class ChatManager {
         const typingIndicator = document.createElement('div');
         typingIndicator.className = 'typing-indicator';
         typingIndicator.innerHTML = `
-            <span>Ollama denkt nach</span>
+            <span>KI denkt nach</span>
             <div class="typing-dots">
                 <div class="typing-dot"></div>
                 <div class="typing-dot"></div>
@@ -511,9 +553,10 @@ class ChatManager {
                 content: chat.systemPrompt
             });
         }
-        
-        const tokenCount = this.tokenCounter.estimateConversationTokens(messages, chat.model);
-        return this.tokenCounter.checkTokenWarning(tokenCount, chat.model);
+
+        const [provider, modelName] = chat.model.split(':');
+        const tokenCount = this.tokenCounter.estimateConversationTokens(messages, modelName);
+        return this.tokenCounter.checkTokenWarning(tokenCount, modelName);
     }
     
     showTokenWarning(chatId, tokenInfo) {
@@ -545,10 +588,13 @@ class ChatManager {
             };
             this.renderMessage(this.activeChatId, summaryRequestMessage);
             
-            const response = await this.ollamaClient.summarizeConversation(
+            const [provider, modelName] = chat.model.split(':');
+            const client = provider === 'openai' ? this.openaiClient : this.ollamaClient;
+            
+            const response = await client.summarizeConversation(
                 this.activeChatId,
                 chat.messages,
-                chat.model
+                modelName
             );
             
             const archivedChat = { ...chat };
@@ -591,10 +637,10 @@ class ChatManager {
             const isConnected = await this.ollamaClient.checkConnection();
             if (isConnected) {
                 this.connectionIndicator.className = 'connection-led connected';
-                this.connectionText.textContent = 'Ollama verbunden';
+                this.connectionText.textContent = 'Verbunden';
             } else {
                 this.connectionIndicator.className = 'connection-led';
-                this.connectionText.textContent = 'Ollama getrennt';
+                this.connectionText.textContent = 'Getrennt';
             }
         } catch (error) {
             this.connectionIndicator.className = 'connection-led';
@@ -605,5 +651,29 @@ class ChatManager {
     updateChatLayout() {
         const chatCount = this.chats.length;
         this.chatGrid.setAttribute('data-chat-count', chatCount.toString());
+    }
+
+    async pullModel() {
+        const modelName = this.modelNameInput.value.trim();
+        if (!modelName) {
+            Utils.showToast('Bitte geben Sie einen Modellnamen ein', 'warning');
+            return;
+        }
+        
+        this.pullModelBtn.disabled = true;
+        this.pullModelBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Installiere...';
+        
+        try {
+            await this.ollamaClient.pullModel(modelName);
+            Utils.showToast(`Modell ${modelName} erfolgreich installiert`, 'success');
+            this.modelNameInput.value = '';
+            await this.ollamaClient.fetchModels();
+            await this.updateModelSelectors();
+        } catch (error) {
+            Utils.showToast(`Fehler beim Installieren des Modells: ${error.message}`, 'error');
+        } finally {
+            this.pullModelBtn.disabled = false;
+            this.pullModelBtn.innerHTML = '<i class="fas fa-download"></i> Installieren';
+        }
     }
 }

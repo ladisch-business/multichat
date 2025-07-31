@@ -64,8 +64,9 @@ async function loadSettings() {
   } catch {
     const defaultSettings = {
       tokenWarningThreshold: 90,
-      maxChatWindows: 5,
-      theme: 'dark'
+      maxChatWindows: 6,
+      theme: 'dark',
+      openaiApiKey: ''
     };
     await saveSettings(defaultSettings);
     return defaultSettings;
@@ -269,6 +270,68 @@ app.delete('/api/models/:modelName', async (req, res) => {
 app.get('/api/connection/status', async (req, res) => {
   try {
     await axios.get(`${OLLAMA_API_URL}/api/tags`, { timeout: 5000 });
+    res.json({ connected: true });
+  } catch (error) {
+    res.json({ connected: false });
+  }
+});
+
+app.post('/api/openai/chat', async (req, res) => {
+  const { messages, model, systemPrompt } = req.body;
+  
+  try {
+    const settings = await loadSettings();
+    const apiKey = settings.openaiApiKey;
+    
+    if (!apiKey) {
+      return res.status(400).json({ error: 'OpenAI API key not configured' });
+    }
+
+    const chatMessages = [...messages];
+    if (systemPrompt) {
+      chatMessages.unshift({
+        role: 'system',
+        content: systemPrompt
+      });
+    }
+
+    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model,
+      messages: chatMessages,
+      max_tokens: 2000,
+      temperature: 0.7
+    }, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    res.json({
+      message: {
+        content: response.data.choices[0].message.content
+      }
+    });
+  } catch (error) {
+    console.error('Error in OpenAI chat:', error.message);
+    res.status(500).json({ error: 'Failed to get response from OpenAI' });
+  }
+});
+
+app.post('/api/openai/connection/status', async (req, res) => {
+  const { apiKey } = req.body;
+  
+  if (!apiKey) {
+    return res.json({ connected: false });
+  }
+
+  try {
+    await axios.get('https://api.openai.com/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      },
+      timeout: 5000
+    });
     res.json({ connected: true });
   } catch (error) {
     res.json({ connected: false });
