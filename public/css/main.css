@@ -80,7 +80,7 @@ body {
 .chat-grid {
     display: grid;
     gap: 0.25rem;
-    min-height: calc(100vh - 120px);
+    min-height: calc(100vh - 119px);
     width: 100%;
     overflow: hidden;
 }
@@ -88,24 +88,20 @@ body {
 .chat-grid[data-chat-count="1"] {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
-    height: calc(100vh - 130px);
+    height: calc(100vh - 119px);
 }
 
 .chat-grid[data-chat-count="2"] {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr;
-    height: calc(100vh - 130px);
-}
-
-.chat-grid[data-chat-count="1"] {
-    grid-template-columns: 1fr;
+    height: calc(100vh - 119px);
 }
 
 
 .chat-grid[data-chat-count="3"] {
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr;
-    height: calc(100vh - 130px);
+    height: calc(100vh - 119px);
 }
 
 .chat-grid[data-chat-count="4"] {
@@ -114,7 +110,7 @@ body {
     grid-template-areas: 
         "chat1 chat2 chat3"
         "chat1 chat2 chat4";
-    height: calc(100vh - 130px);
+    height: calc(100vh - 119px);
 }
 
 .chat-grid[data-chat-count="4"] .chat-window:nth-child(1) { grid-area: chat1; }
@@ -129,8 +125,8 @@ body {
         "chat1 chat2 chat3"
         "chat1 chat2 chat4"
         "chat1 chat2 chat5";
-    height: calc(100vh - 130px);
-    max-height: calc(100vh - 130px);
+    height: calc(100vh - 119px);
+    max-height: calc(100vh - 119px);
 }
 
 .chat-grid[data-chat-count="5"] .chat-window:nth-child(1) { grid-area: chat1; }
