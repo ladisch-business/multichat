@@ -149,13 +149,23 @@ app.post('/api/chat/:chatId', async (req, res) => {
       messages: chatMessages,
       stream: false
     }, {
-      timeout: 30000
+      timeout: 120000
     });
     
     res.json(response.data);
   } catch (error) {
     console.error('Error in chat:', error.message);
-    res.status(500).json({ error: 'Failed to get response from Ollama' });
+    console.error('Error details:', {
+      code: error.code,
+      response: error.response?.status,
+      timeout: error.code === 'ECONNABORTED'
+    });
+    
+    if (error.code === 'ECONNABORTED') {
+      res.status(504).json({ error: 'Request timeout - model is loading, please try again' });
+    } else {
+      res.status(500).json({ error: 'Failed to get response from Ollama' });
+    }
   }
 });
 
@@ -181,13 +191,23 @@ Summary:`;
       ],
       stream: false
     }, {
-      timeout: 30000
+      timeout: 120000
     });
     
     res.json({ summary: response.data.message.content });
   } catch (error) {
     console.error('Error in summarization:', error.message);
-    res.status(500).json({ error: 'Failed to summarize conversation' });
+    console.error('Error details:', {
+      code: error.code,
+      response: error.response?.status,
+      timeout: error.code === 'ECONNABORTED'
+    });
+    
+    if (error.code === 'ECONNABORTED') {
+      res.status(504).json({ error: 'Request timeout - model is loading, please try again' });
+    } else {
+      res.status(500).json({ error: 'Failed to summarize conversation' });
+    }
   }
 });
 
@@ -286,6 +306,8 @@ app.post('/api/models/pull', async (req, res) => {
     const response = await axios.post(`${OLLAMA_API_URL}/api/pull`, {
       name: model,
       stream: false
+    }, {
+      timeout: 300000
     });
     res.json(response.data);
   } catch (error) {
