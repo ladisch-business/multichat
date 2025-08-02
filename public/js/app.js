@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const models = await ollamaClient.fetchModels();
         console.log('Available Ollama models:', models);
         Utils.showToast('Ollama-Verbindung hergestellt', 'success');
+        
+        await chatManager.updateModelSelectors();
+        console.log('Models automatically refreshed on page load');
     } catch (error) {
         console.warn('Ollama not available:', error);
         Utils.showToast('Ollama nicht verfügbar - nur OpenAI-Modelle verfügbar', 'warning');
