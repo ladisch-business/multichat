@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   ollama-power-interface:
     build: .
@@ -12,12 +10,12 @@ services:
       - ./data:/app/data
     networks:
       - default
-      - core_proxy-manager
+      - core_proxy-network
       - ollama
     restart: unless-stopped
 
 networks:
-  core_proxy-manager:
+  core_proxy-network:
     external: true
   ollama:
     external: true
