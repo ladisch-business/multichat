@@ -33,6 +33,24 @@
     color: var(--text-primary);
 }
 
+.chat-title-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+}
+
+.chat-title-input:hover {
+    background-color: var(--bg-secondary);
+}
+
+.chat-title-input:focus {
+    background-color: var(--bg-secondary);
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
 .chat-controls {
     display: flex;
     gap: 0.5rem;

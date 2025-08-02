@@ -148,6 +148,8 @@ app.post('/api/chat/:chatId', async (req, res) => {
       model,
       messages: chatMessages,
       stream: false
+    }, {
+      timeout: 30000
     });
     
     res.json(response.data);
@@ -178,6 +180,8 @@ Summary:`;
         }
       ],
       stream: false
+    }, {
+      timeout: 30000
     });
     
     res.json({ summary: response.data.message.content });
