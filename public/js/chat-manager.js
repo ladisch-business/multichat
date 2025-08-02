@@ -119,12 +119,18 @@ class ChatManager {
                     const chat = this.getChat(chatId);
                     if (chat) {
                         chat.model = savedChat.model || '';
+                        chat.name = savedChat.name || `Chat ${i + 1}`;
                         
                         if (savedChat.systemPromptId) {
                             const prompt = this.promptLibrary.prompts.find(p => p.id === savedChat.systemPromptId);
                             chat.systemPrompt = prompt ? prompt.prompt : null;
                         } else {
                             chat.systemPrompt = null;
+                        }
+                        
+                        const chatTitleEl = document.querySelector(`[data-chat-id="${chatId}"]`);
+                        if (chatTitleEl) {
+                            chatTitleEl.textContent = chat.name;
                         }
                         
                         await this.updateModelSelector(chatId);
@@ -153,7 +159,8 @@ class ChatManager {
                     }
                     return {
                         model: chat.model || '',
-                        systemPromptId: systemPromptId
+                        systemPromptId: systemPromptId,
+                        name: chat.name || `Chat ${index + 1}`
                     };
                 })
             };
@@ -228,7 +235,8 @@ class ChatManager {
             messages: [],
             model: this.ollamaClient.models.length > 0 ? this.ollamaClient.models[0].name : '',
             systemPrompt: null,
-            isTyping: false
+            isTyping: false,
+            name: `Chat ${this.chats.length + 1}`
         };
         
         this.chats.push(chat);
@@ -240,7 +248,7 @@ class ChatManager {
         chatWindow.innerHTML = `
             <div class="chat-header">
                 <div class="chat-title">
-                    <h3>Chat ${this.chats.length}</h3>
+                    <h3 contenteditable="true" class="chat-title-input" data-chat-id="${chatId}">${chat.name}</h3>
                 </div>
                 <div class="chat-controls">
                     <div class="model-selector">
@@ -346,6 +354,27 @@ class ChatManager {
         messagesEl.addEventListener('click', () => {
             this.activeChatId = chatId;
         });
+        
+        const chatTitleEl = document.querySelector(`[data-chat-id="${chatId}"]`);
+        if (chatTitleEl) {
+            chatTitleEl.addEventListener('blur', () => {
+                const newName = chatTitleEl.textContent.trim();
+                if (newName) {
+                    const chat = this.getChat(chatId);
+                    if (chat) {
+                        chat.name = newName;
+                        this.saveChatStates();
+                    }
+                }
+            });
+            
+            chatTitleEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    chatTitleEl.blur();
+                }
+            });
+        }
     }
     
     async updateModelSelectors() {
